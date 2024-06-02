@@ -8,4 +8,47 @@
 *----------------------------------------------------------------------*
 MODULE access_screen_pai INPUT.
 
+TYPES: BEGIN OF wa_admin,
+  wa_key        TYPE zkey_admin,
+  wa_login      TYPE zlogin,
+  wa_pass       TYPE zpass,
+  wa_start_date TYPE begda,
+  wa_end_date   TYPE endda,
+  wa_lvl_access TYPE zlvl,
+END OF wa_admin.
+
+DATA: lt_admin TYPE TABLE OF zraadmin,
+      ls_admin LIKE LINE OF lt_admin.
+
+  DATA attempts TYPE i.
+
+IF okcode0001 = 'FCT_LOGIN'.
+
+  TRANSLATE in_login TO LOWER CASE.
+  TRANSLATE in_pass TO LOWER CASE.
+
+  SELECT SINGLE *
+    FROM zraadmin
+    INTO ls_admin
+    WHERE login = in_login
+    AND pass = in_pass.
+
+  IF sy-subrc = 0.
+    CALL SCREEN '0002'.
+  ELSE.
+    attempts = attempts + 1.
+
+    IF attempts = 3.
+       LEAVE PROGRAM.
+    ENDIF.
+
+    MESSAGE |'Errors: 3/' { attempts } | TYPE 'S' DISPLAY LIKE 'I'.
+  ENDIF.
+
+ENDIF.
+
+IF okcode0001 = 'FCT_EXIT1'.
+  LEAVE PROGRAM.
+ENDIF.
+
 ENDMODULE.
