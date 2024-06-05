@@ -1,0 +1,131 @@
+*----------------------------------------------------------------------*
+***INCLUDE Z_CL_USER.
+*----------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Class CL_USER
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+CLASS cl_user DEFINITION FINAL.
+
+  PUBLIC SECTION.
+
+  "----------------------------------------------
+    METHODS:
+
+      access_admin "Method to validade login access"
+        IMPORTING
+          login_adm TYPE zlogin "Login to screen 0001
+          pass_adm TYPE zpass   "Pass to screen 0001
+        EXPORTING
+          lvl TYPE zlvl.        "Exports the lvl access from the employee
+
+  "----------------------------------------------
+
+  PRIVATE SECTION.
+
+    TYPES: BEGIN OF wa_admin,       "Work Area to admin database
+        key        TYPE zkey_admin, "Id Employee
+        login      TYPE zlogin,     "Nickname Employee
+        pass       TYPE zpass,      "Password Employee
+        start_date TYPE begda,      "Hiring Date
+        end_date   TYPE endda,      "Dismissal Date
+        lvl_access TYPE zlvl,       "Level Access
+    END OF wa_admin.
+
+    DATA: lt_admin TYPE TABLE OF zraadmin, "Internal Table Admin
+          ls_admin LIKE LINE OF lt_admin.  "Structure Line
+
+    DATA: lvl TYPE zlvl. "Variable to receive the Level Access
+
+ENDCLASS.
+
+CLASS cl_user IMPLEMENTATION.
+
+  METHOD access_admin. "Method to validade login access"
+
+    "Imports: login_adm, pass_adm
+    "Exports: lvl
+
+    SELECT SINGLE *           "Select a single line
+      FROM zraadmin           "From the admin table
+      INTO ls_admin           "Into structure line
+      WHERE login = login_adm "where the login and the pass...
+      AND pass = pass_adm.    "are in the table
+
+      IF sy-subrc = 0.             "if the login and pass are found...
+        lvl = ls_admin-lvl_access. "variable receives the data
+      ENDIF.
+
+ENDMETHOD.
+
+ENDCLASS.
+
+*----------------------------------------------------------------------*
+***INCLUDE Z_HCM_TEST8_ACCESS_SCREEN_PO01.
+*----------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Module ACCESS_SCREEN_PBO OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE access_screen_pbo OUTPUT.
+* SET PF-STATUS 'xxxxxxxx'.
+* SET TITLEBAR 'xxx'.
+
+  DATA: in_login TYPE zlogin, "Element Login
+        in_pass TYPE zpass.   "Element Pass
+
+  DATA: cl_admin TYPE REF TO cl_user. "Instance from Admin Class
+
+  IF cl_admin IS INITIAL.
+    CREATE OBJECT cl_admin.  "Object from Admin Class
+  ENDIF.
+
+  DATA: lv_lvl TYPE zlvl.    "Variable to receives the Level Access
+
+  DATA: attempts TYPE i,     "Error Attempts of the user"
+        attempts_num TYPE i. "Error Limit Attempts"
+
+ENDMODULE.
+
+*----------------------------------------------------------------------*
+***INCLUDE Z_HCM_TEST8_ACCESS_SCREEN_PI01.
+*----------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  ACCESS_SCREEN_PAI  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE access_screen_pai INPUT.
+
+  "Strings are lower case in the Database
+  TRANSLATE in_login TO LOWER CASE.
+  TRANSLATE in_pass TO LOWER CASE.
+
+  attempts_num = 3. "Setting the number of attempts
+
+  CASE okcode0001.    "Case button is pressed...
+    WHEN 'FCT_LOGIN'. "When the button login is pressed...
+
+      cl_admin->access_admin(    "Call access method admin
+          EXPORTING
+            login_adm = in_login "Send the login writen
+            pass_adm = in_pass   "Send the pass writen
+          IMPORTING
+            lvl = lv_lvl ).      "Receive the lvl access
+
+      IF lv_lvl = 'S'.              "If the access is Super User...
+        CALL SCREEN '0002'.         "Call Admin Menu
+      ELSE.                         "If the access is any other...
+        attempts = attempts + 1.    "Increment the attempts number
+        IF attempts = attempts_num. "If the attempts number is = error attempts
+           LEAVE PROGRAM.           "Close Program
+        ENDIF.
+        "Display Message showing the number of the attempts.
+        MESSAGE |'Errors: { attempts_num }/' { attempts } | TYPE 'S' DISPLAY LIKE 'I'.
+      ENDIF.
+    WHEN'FCT_EXIT1'.  "When the button exit is pressed...
+       LEAVE PROGRAM. "Close Program
+    ENDCASE.
+ENDMODULE.
