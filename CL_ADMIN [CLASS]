@@ -1,0 +1,62 @@
+*----------------------------------------------------------------------*
+***INCLUDE Z_CL_USER.
+*----------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Class CL_USER
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+CLASS cl_user DEFINITION FINAL.
+
+  PUBLIC SECTION.
+  
+  "----------------------------------------------
+    METHODS: 
+    
+      access_admin "Method to validade login access"
+        IMPORTING
+          login_adm TYPE zlogin "Login to screen 0001
+          pass_adm TYPE zpass   "Pass to screen 0001
+        EXPORTING
+          lvl TYPE zlvl.        "Exports the lvl access from the employee
+    
+  "----------------------------------------------
+
+  PRIVATE SECTION.
+
+    TYPES: BEGIN OF wa_admin,       "Work Area to admin database
+        key        TYPE zkey_admin, "Id Employee
+        login      TYPE zlogin,     "Nickname Employee
+        pass       TYPE zpass,      "Password Employee
+        start_date TYPE begda,      "Hiring Date
+        end_date   TYPE endda,      "Dismissal Date
+        lvl_access TYPE zlvl,       "Level Access 
+    END OF wa_admin.
+
+    DATA: lt_admin TYPE TABLE OF zraadmin, "Internal Table Admin
+          ls_admin LIKE LINE OF lt_admin.  "Structure Line
+
+    DATA: lvl TYPE zlvl. "Variable to receive the Level Access
+
+ENDCLASS.
+
+CLASS cl_user IMPLEMENTATION.
+
+  METHOD access_admin. "Method to validade login access"
+    
+    "Imports: login_adm, pass_adm
+    "Exports: lvl
+    
+    SELECT SINGLE *           "Select a single line
+      FROM zraadmin           "From the admin table
+      INTO ls_admin           "Into structure line
+      WHERE login = login_adm "where the login and the pass...
+      AND pass = pass_adm.    "are in the table
+
+      IF sy-subrc = 0.             "if the login and pass are found...
+        lvl = ls_admin-lvl_access. "variable receives the data
+      ENDIF.
+
+ENDMETHOD.
+
+ENDCLASS.
