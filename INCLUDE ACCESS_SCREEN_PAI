@@ -8,47 +8,33 @@
 *----------------------------------------------------------------------*
 MODULE access_screen_pai INPUT.
 
-TYPES: BEGIN OF wa_admin,
-  wa_key        TYPE zkey_admin,
-  wa_login      TYPE zlogin,
-  wa_pass       TYPE zpass,
-  wa_start_date TYPE begda,
-  wa_end_date   TYPE endda,
-  wa_lvl_access TYPE zlvl,
-END OF wa_admin.
-
-DATA: lt_admin TYPE TABLE OF zraadmin,
-      ls_admin LIKE LINE OF lt_admin.
-
-  DATA attempts TYPE i.
-
-IF okcode0001 = 'FCT_LOGIN'.
-
+  "Strings are lower case in the Database
   TRANSLATE in_login TO LOWER CASE.
   TRANSLATE in_pass TO LOWER CASE.
 
-  SELECT SINGLE *
-    FROM zraadmin
-    INTO ls_admin
-    WHERE login = in_login
-    AND pass = in_pass.
+  attempts_num = 3. "Setting the number of attempts
 
-  IF sy-subrc = 0.
-    CALL SCREEN '0002'.
-  ELSE.
-    attempts = attempts + 1.
+  CASE okcode0001.    "Case button is pressed...
+    WHEN 'FCT_LOGIN'. "When the button login is pressed...
 
-    IF attempts = 3.
-       LEAVE PROGRAM.
-    ENDIF.
+      cl_admin->access_admin(    "Call access method admin
+          EXPORTING
+            login_adm = in_login "Send the login writen
+            pass_adm = in_pass   "Send the pass writen
+          IMPORTING
+            lvl = lv_lvl ).      "Receive the lvl access
 
-    MESSAGE |'Errors: 3/' { attempts } | TYPE 'S' DISPLAY LIKE 'I'.
-  ENDIF.
-
-ENDIF.
-
-IF okcode0001 = 'FCT_EXIT1'.
-  LEAVE PROGRAM.
-ENDIF.
-
+      IF lv_lvl = 'S'.              "If the access is Super User...
+        CALL SCREEN '0002'.         "Call Admin Menu
+      ELSE.                         "If the access is any other...   
+        attempts = attempts + 1.    "Increment the attempts number
+        IF attempts = attempts_num. "If the attempts number is = error attempts
+           LEAVE PROGRAM.           "Close Program
+        ENDIF.
+        "Display Message showing the number of the attempts.
+        MESSAGE |'Errors: { attempts_num }/' { attempts } | TYPE 'S' DISPLAY LIKE 'I'.  
+      ENDIF.
+    WHEN'FCT_EXIT1'.  "When the button exit is pressed...
+       LEAVE PROGRAM. "Close Program
+    ENDCASE.
 ENDMODULE.
