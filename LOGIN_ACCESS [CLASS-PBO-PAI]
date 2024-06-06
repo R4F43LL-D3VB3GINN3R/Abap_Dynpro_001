@@ -13,12 +13,22 @@ CLASS cl_user DEFINITION FINAL.
   "----------------------------------------------
     METHODS:
 
-      access_admin "Method to validade login access"
+      "Method to hash login and password
+      hash_logon
+        importing
+          login_adm type zlogin    "Login to screen 0001
+          pass_adm  type zpass     "Pass to screen 0001
+        exporting
+          hashed_login type zlogin "Login hashed to screen 0001
+          hashed_pass type  zpass, "Pass hashed to screen 0001
+
+      "Method to validate login access
+      access_admin
         IMPORTING
-          login_adm TYPE zlogin "Login to screen 0001
-          pass_adm TYPE zpass   "Pass to screen 0001
+          login_adm TYPE zlogin  "Login hashed to screen 0001
+          pass_adm  TYPE zpass   "Pass hashed to screen 0001
         EXPORTING
-          lvl TYPE zlvl.        "Exports the lvl access from the employee
+          lvl       TYPE zlvl.   "Exports the lvl access from the employee
 
   "----------------------------------------------
 
@@ -42,16 +52,66 @@ ENDCLASS.
 
 CLASS cl_user IMPLEMENTATION.
 
+  METHOD hash_logon. "Method to hash login and password
+
+    DATA: result1 TYPE string, "Result from hashed login
+          result2 TYPE string. "Result from hashed pass
+
+    DATA: login_str TYPE string, "Receives a char and turn to string
+          pass_str  TYPE string. "Receives a char and turn to string
+
+    login_str = login_adm. "Login Char -> ToString
+    pass_str  = pass_adm.  "Pass Char -> ToString
+
+    "----------------------------------------------------------
+
+    "Method to hash the login
+    cl_abap_message_digest=>calculate_hash_for_char(
+      EXPORTING
+        if_algorithm = 'SHA512'
+        if_data      = login_str "Send the string login
+      IMPORTING
+        ef_hashstring = result1  "Receive the login hashed
+    ).
+    "Method to hash the password
+    cl_abap_message_digest=>calculate_hash_for_char(
+      EXPORTING
+        if_algorithm = 'SHA512'
+        if_data      = pass_str "Send the string pass
+      IMPORTING
+        ef_hashstring = result2 "Receive the pass hashed
+    ).
+
+    "----------------------------------------------------------
+
+    hashed_login = result1. "Export it: Login String ->ToChar
+    hashed_pass  = result2. "Export it: Login Pass ->ToChar
+
+  ENDMETHOD.
+
   METHOD access_admin. "Method to validade login access"
 
     "Imports: login_adm, pass_adm
     "Exports: lvl
 
+    "Variables to receive the hashed Login from method above.
+    data: new_login type zlogin,
+          new_pass type zpass.
+
+    me->hash_logon( "Call the method to hash login and pass
+      EXPORTING
+        login_adm  = login_adm "Send the login char
+        pass_adm   = pass_adm  "Send the pass char
+      IMPORTING
+        hashed_login = new_login "Login Hashed
+        hashed_pass  = new_pass  "Pass Hashed
+    ).
+
     SELECT SINGLE *           "Select a single line
       FROM zraadmin           "From the admin table
       INTO ls_admin           "Into structure line
-      WHERE login = login_adm "where the login and the pass...
-      AND pass = pass_adm.    "are in the table
+      WHERE login = new_login "where the login hashed and the pass hashed...
+      AND pass = new_pass.    "are in the table
 
       IF sy-subrc = 0.             "if the login and pass are found...
         lvl = ls_admin-lvl_access. "variable receives the data
@@ -60,7 +120,6 @@ CLASS cl_user IMPLEMENTATION.
 ENDMETHOD.
 
 ENDCLASS.
-
 *----------------------------------------------------------------------*
 ***INCLUDE Z_HCM_TEST8_ACCESS_SCREEN_PO01.
 *----------------------------------------------------------------------*
@@ -99,11 +158,11 @@ ENDMODULE.
 *----------------------------------------------------------------------*
 MODULE access_screen_pai INPUT.
 
-  "Strings are lower case in the Database
-  TRANSLATE in_login TO LOWER CASE.
-  TRANSLATE in_pass TO LOWER CASE.
-
   attempts_num = 3. "Setting the number of attempts
+
+  "Strings are lower case in the Database
+    TRANSLATE in_login TO LOWER CASE.
+    TRANSLATE in_pass  TO LOWER CASE.
 
   CASE okcode0001.    "Case button is pressed...
     WHEN 'FCT_LOGIN'. "When the button login is pressed...
