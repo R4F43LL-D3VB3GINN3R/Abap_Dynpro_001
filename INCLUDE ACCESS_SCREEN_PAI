@@ -8,11 +8,11 @@
 *----------------------------------------------------------------------*
 MODULE access_screen_pai INPUT.
 
-  "Strings are lower case in the Database
-  TRANSLATE in_login TO LOWER CASE.
-  TRANSLATE in_pass TO LOWER CASE.
-
   attempts_num = 3. "Setting the number of attempts
+
+  "Strings are lower case in the Database
+    TRANSLATE in_login TO LOWER CASE.
+    TRANSLATE in_pass  TO LOWER CASE.
 
   CASE okcode0001.    "Case button is pressed...
     WHEN 'FCT_LOGIN'. "When the button login is pressed...
@@ -26,13 +26,13 @@ MODULE access_screen_pai INPUT.
 
       IF lv_lvl = 'S'.              "If the access is Super User...
         CALL SCREEN '0002'.         "Call Admin Menu
-      ELSE.                         "If the access is any other...   
+      ELSE.                         "If the access is any other...
         attempts = attempts + 1.    "Increment the attempts number
         IF attempts = attempts_num. "If the attempts number is = error attempts
            LEAVE PROGRAM.           "Close Program
         ENDIF.
         "Display Message showing the number of the attempts.
-        MESSAGE |'Errors: { attempts_num }/' { attempts } | TYPE 'S' DISPLAY LIKE 'I'.  
+        MESSAGE |'Errors: { attempts_num }/' { attempts } | TYPE 'S' DISPLAY LIKE 'I'.
       ENDIF.
     WHEN'FCT_EXIT1'.  "When the button exit is pressed...
        LEAVE PROGRAM. "Close Program
