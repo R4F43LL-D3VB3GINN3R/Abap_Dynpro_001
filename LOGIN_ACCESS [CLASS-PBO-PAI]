@@ -15,12 +15,14 @@ CLASS cl_user DEFINITION FINAL.
 
       "Method to hash login and password
       hash_logon
-        importing
-          login_adm type zlogin    "Login to screen 0001
-          pass_adm  type zpass     "Pass to screen 0001
-        exporting
-          hashed_login type zlogin "Login hashed to screen 0001
-          hashed_pass type  zpass, "Pass hashed to screen 0001
+        IMPORTING
+          login_adm TYPE zlogin    "Login to screen 0001
+          pass_adm  TYPE zpass     "Pass to screen 0001
+        EXPORTING
+          hashed_login TYPE zlogin "Login hashed to screen 0001
+          hashed_pass TYPE  zpass "Pass hashed to screen 0001
+        RAISING
+          cx_abap_message_digest,
 
       "Method to validate login access
       access_admin
@@ -53,6 +55,9 @@ ENDCLASS.
 CLASS cl_user IMPLEMENTATION.
 
   METHOD hash_logon. "Method to hash login and password
+
+    "Imports: login_adm, pass_adm
+    "Exports: hashed_login, hashed_pass
 
     DATA: result1 TYPE string, "Result from hashed login
           result2 TYPE string. "Result from hashed pass
@@ -95,17 +100,21 @@ CLASS cl_user IMPLEMENTATION.
     "Exports: lvl
 
     "Variables to receive the hashed Login from method above.
-    data: new_login type zlogin,
-          new_pass type zpass.
-
-    me->hash_logon( "Call the method to hash login and pass
-      EXPORTING
-        login_adm  = login_adm "Send the login char
-        pass_adm   = pass_adm  "Send the pass char
-      IMPORTING
-        hashed_login = new_login "Login Hashed
-        hashed_pass  = new_pass  "Pass Hashed
-    ).
+    DATA: new_login TYPE zlogin,
+          new_pass TYPE zpass.
+    TRY.
+      me->hash_logon( "Call the self-method to hash login and pass
+        EXPORTING
+          login_adm  = login_adm "Send the login char
+          pass_adm   = pass_adm  "Send the pass char
+        IMPORTING
+          hashed_login = new_login "Login Hashed
+          hashed_pass  = new_pass  "Pass Hashed
+      ).
+    CATCH cx_abap_message_digest INTO DATA(lx_message_digest).
+      " Handle the exception (e.g., log the error, set default values, etc.)
+      RETURN. " Exit the method if hashing fails
+    ENDTRY.
 
     SELECT SINGLE *           "Select a single line
       FROM zraadmin           "From the admin table
