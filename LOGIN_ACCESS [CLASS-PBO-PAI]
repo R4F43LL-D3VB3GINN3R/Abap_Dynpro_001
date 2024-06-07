@@ -6,11 +6,26 @@
 *&---------------------------------------------------------------------*
 *&
 *&---------------------------------------------------------------------*
+CLASS cx_application_error DEFINITION "Defines the new exception class
+  INHERITING FROM cx_static_check. "It inherits the static verification of exceptions
+  PUBLIC SECTION.
+    DATA: error_message TYPE string. "Variable to receive the message
+    "Contructor method accepts a string parameter
+    METHODS: constructor IMPORTING !error_message TYPE string.
+ENDCLASS.
+
+CLASS cx_application_error IMPLEMENTATION.
+  METHOD constructor. "The method calls a string message
+    super->constructor( ).
+    me->error_message = error_message.
+  ENDMETHOD.
+ENDCLASS.
+
 CLASS cl_user DEFINITION FINAL.
 
   PUBLIC SECTION.
 
-  "----------------------------------------------
+"----------------------------------------------
     METHODS:
 
       "Method to hash login and password
@@ -22,7 +37,8 @@ CLASS cl_user DEFINITION FINAL.
           hashed_login TYPE zlogin "Login hashed to screen 0001
           hashed_pass TYPE  zpass "Pass hashed to screen 0001
         RAISING
-          cx_abap_message_digest,
+          cx_abap_message_digest
+          cx_application_error,
 
       "Method to validate login access
       access_admin
@@ -30,9 +46,11 @@ CLASS cl_user DEFINITION FINAL.
           login_adm TYPE zlogin  "Login hashed to screen 0001
           pass_adm  TYPE zpass   "Pass hashed to screen 0001
         EXPORTING
-          lvl       TYPE zlvl.   "Exports the lvl access from the employee
+          lvl       TYPE zlvl    "Exports the lvl access from the employee
+        RAISING
+          cx_application_error.  " Add the custom exception here
 
-  "----------------------------------------------
+"----------------------------------------------
 
   PRIVATE SECTION.
 
@@ -71,6 +89,7 @@ CLASS cl_user IMPLEMENTATION.
     "----------------------------------------------------------
 
     "Method to hash the login
+    TRY.
     cl_abap_message_digest=>calculate_hash_for_char(
       EXPORTING
         if_algorithm = 'SHA512'
@@ -86,6 +105,11 @@ CLASS cl_user IMPLEMENTATION.
       IMPORTING
         ef_hashstring = result2 "Receive the pass hashed
     ).
+    CATCH cx_abap_message_digest INTO DATA(lx_message_digest).
+      RAISE EXCEPTION TYPE cx_application_error
+        EXPORTING
+          error_message = 'Encrypt Error Data.'.
+    ENDTRY.
 
     "----------------------------------------------------------
 
