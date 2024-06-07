@@ -191,7 +191,7 @@ ENDMODULE.
 *----------------------------------------------------------------------*
 MODULE access_screen_pai INPUT.
 
-  attempts_num = 3. "Setting the number of attempts
+   attempts_num = 3. "Setting the number of attempts
 
   "Strings are lower case in the Database
     TRANSLATE in_login TO LOWER CASE.
@@ -209,7 +209,9 @@ MODULE access_screen_pai INPUT.
 
       IF lv_lvl = 'S'.              "If the access is Super User...
         CALL SCREEN '0002'.         "Call Admin Menu
-      ELSE.                         "If the access is any other...
+      ELSEIF lv_lvl = 'A' or lv_lvl = 'B' or lv_lvl = 'C'. "If the access is any other...
+        CALL SCREEN '0003'.         "Call Main Menu
+      ELSE.                         "If the access not exists...
         attempts = attempts + 1.    "Increment the attempts number
         IF attempts = attempts_num. "If the attempts number is = error attempts
            LEAVE PROGRAM.           "Close Program
