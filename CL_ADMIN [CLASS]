@@ -58,7 +58,9 @@ CLASS cl_user DEFINITION FINAL.
        "Method to generate a random user key
        generate_key
         EXPORTING
-          lv_newkey TYPE zkey_admin, "Export the random key
+          lv_newkey TYPE zkey_admin "Export the random key
+        RAISING
+           cx_application_error,  "Add the custom exception here
 
      "----------------------------------------------
 
@@ -184,6 +186,12 @@ METHOD generate_key. "Method to generate a random user key
          number_chars        = 8       "Number of characters
        IMPORTING
          random_string       = lv_uid. "String takes random string
+      
+      IF sy-subrc <> 0.
+        RAISE EXCEPTION TYPE cx_application_error
+          EXPORTING
+            error_message = 'Error generating key string'.
+      ENDIF.
 
       DATA: lv_random_number TYPE i. "Integer to receive the random number
 
@@ -196,6 +204,12 @@ METHOD generate_key. "Method to generate a random user key
        EXCEPTIONS
          invalid_input       = 1
          OTHERS              = 2.
+      
+      IF sy-subrc <> 0.
+        RAISE EXCEPTION TYPE cx_application_error
+          EXPORTING
+            error_message = 'Error generating key number'.
+      ENDIF.
 
       DATA: lv_randomchar TYPE string.  "String to receive the value returned by the function
       lv_randomchar = lv_random_number. "String takes the number Int->ToChar
