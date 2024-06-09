@@ -15,6 +15,10 @@ MODULE after_insert_pai INPUT.
   CASE okcode0021.         "Case button is pressed...
     WHEN 'FCT_INSERT0021'. "When the Button Insert is pressed...
 
+        "Strings are lower case in the Database
+        TRANSLATE in_nickname TO LOWER CASE.
+        TRANSLATE in_password  TO LOWER CASE.
+
       cl_admin->insert_admin(    "Call insert admin method
           IMPORTING
             login_adm = in_nickname "Send the field nickname
