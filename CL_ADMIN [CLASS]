@@ -237,10 +237,6 @@ METHOD insert_admin. "Method to register a new admin
     in_datenow = sy-datum.    "Hiring Date takes the datenow
     in_end_date = '00000000'. "Dismissal Date receives the custom value.
 
-    "Strings are lower case in the Database
-    TRANSLATE new_login TO LOWER CASE.
-    TRANSLATE new_pass  TO LOWER CASE.
-
     "Fill the Structure
     ls_admin-key_adm    = key_access.  "Random Key
     ls_admin-login      = new_login.   "Hashed Login
