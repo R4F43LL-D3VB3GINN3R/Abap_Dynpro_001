@@ -22,9 +22,9 @@ MODULE after_insert_pai INPUT.
       TRY.
         cl_admin->insert_admin(
           IMPORTING
-            login_adm = in_nickname
-            pass_adm  = in_password
-            lvl       = in_lvl_access
+            login_adm = in_nickname   "nickname on the screen
+            pass_adm  = in_password   "password on the screen
+            lvl       = in_lvl_access "lvl access on the screen
         ).
         MESSAGE 'Admin inserted successfully' TYPE 'S'.
       CATCH cx_application_error INTO DATA(lx_error).
